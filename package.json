@@ -2,12 +2,16 @@
   "name": "nn",
   "version": "1.0.0",
   "description": "",
-  "main": "src/main.ts",
+  "main": "dist/mnist.js",
   "dependencies": {
+    "@tensorflow/tfjs-node": "2.4.0",
     "@types/node": "^14.11.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "node-pre-gyp": "0.12.0"
+  },
   "scripts": {
+    "start": "node dist/mnist.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "EvolveYourMind",
