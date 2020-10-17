@@ -1,6 +1,9 @@
 import fs from "fs";
 import { resolve } from "path";
 
+const datasetDir = resolve(__dirname, "..", "data");
+const datasetPath = (type: "test" | "training") => resolve(datasetDir, type + "-data.json");
+
 function readImgs(imgsPath: string, labelsPath: string) {
 	const fbuff = fs.readFileSync(imgsPath);
 	const lbuff = fs.readFileSync(labelsPath);
@@ -21,7 +24,15 @@ function readImgs(imgsPath: string, labelsPath: string) {
 	}
 }
 
-export function getData(type: "test" | "training"): ReturnType<typeof readImgs> {
-	return JSON.parse(fs.readFileSync(resolve("data", type, "data.json")).toString());
+export function generateDataset(type: "test" | "training") {
+	fs.writeFileSync(datasetPath(type), JSON.stringify(
+		readImgs(
+				resolve(datasetDir, type + "-images")
+			, resolve(datasetDir, type + "-labels")
+		)
+	));
 }
-const WEIGHTS_PATH = "dist/weights2.json";
+
+export function getData(type: "test" | "training"): ReturnType<typeof readImgs> {
+	return JSON.parse(fs.readFileSync(datasetPath(type)).toString());
+}
