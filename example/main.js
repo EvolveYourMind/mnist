@@ -86,7 +86,7 @@ function drawGuess() {
 }
 
 async function loadGuess() {
-	const { images } = await fetch("../../data/test-data.json").then(r => r.json());
+	const { images } = await fetch("./examples.json").then(r => r.json());
 	const randomImg = images[Math.floor(Math.random() * images.length)];
 	for(let x = 0; x < 28; x++) {
 		for(let y = 0; y < 28; y++) {
@@ -102,5 +102,5 @@ async function loadGuess() {
 
 let model
 (async () => {
-	model = await tf.loadLayersModel(location.href + "/../model2/model.json");
+	model = await tf.loadLayersModel(location.href + "/../../model2/model.json");
 })();
