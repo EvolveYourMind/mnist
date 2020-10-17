@@ -102,14 +102,5 @@ async function loadGuess() {
 
 let model
 (async () => {
-	model = await tf.loadLayersModel('http://localhost:5000/model2/model.json');
-	// let prev = 0;
-	// setInterval(() => {
-		// prev++;
-		// if(prev % 2 === 0) {
-		// drawGuess(model);
-		// } else {
-		// loadGuess(model);
-		// }
-	// }, 5000);
+	model = await tf.loadLayersModel(location.href + "/../model2/model.json");
 })();
