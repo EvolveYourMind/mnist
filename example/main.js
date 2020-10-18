@@ -45,7 +45,6 @@ canvas.addEventListener("mousedown", e => {
 document.body.addEventListener("mouseup", e => {
 	mousedown = false
 	ctx.closePath();
-	ctx.stroke();
 })
 
 canvas.addEventListener("mousemove", e => {
@@ -70,7 +69,7 @@ function drawGuess() {
 		}
 	}
 
-	const outputs = [...model.predict(img.flatten().expandDims()).dataSync()];
+	const outputs = [...model.predict(img.expandDims()).dataSync()];
 	output(outputs);
 }
 let examples = null;
@@ -84,7 +83,7 @@ async function loadGuess() {
 			ctx2.fillRect(x * pixelMultiplier, y * pixelMultiplier, pixelMultiplier, pixelMultiplier);
 		}
 	}
-	const outputs = [...model.predict(tf.tensor1d(randomImg).expandDims()).dataSync()];
+	const outputs = [...model.predict(tf.tensor1d(randomImg).reshape([28, 28, 1]).expandDims()).dataSync()];
 	output(outputs)
 }
 

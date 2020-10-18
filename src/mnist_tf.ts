@@ -6,22 +6,40 @@ import { existsSync } from "fs";
 (async () => {
 	const data = getData("training");
 	const tfDataset = tf.data.zip({
-		xs: tf.data.array(data.images.map(i => tf.tensor1d(i)))
+		xs: tf.data.array(data.images.map(i => tf.tensor1d(i).reshape([28, 28, 1])))
 		, ys: tf.data.array(data.labels.map(l => tf.tensor1d(Array.from({ length: 10 }, (_, i) => i === l ? 1 : 0))))
 	}).batch(4)
 		.shuffle(4);
 
 	const modelPath = resolve(__dirname, "..", "model2");
-
-	const nn = existsSync(modelPath) ? await tf.loadLayersModel("file://" + resolve(modelPath, "model.json")) : tf.sequential({
-		layers: [
-			tf.layers.dense({ inputShape: [data.images[0].length], units: 20, activation: "sigmoid" })
-			, tf.layers.dense({ units: 10, activation: "softmax" })
-		]
-	});
+	console.log("Loaded")
+	const nn = existsSync(modelPath) ? await tf.loadLayersModel("file://" + resolve(modelPath, "model.json")) : 
+		tf.sequential({
+			layers: [
+				tf.layers.conv2d({
+					inputShape: [28, 28, 1],
+					kernelSize: 5,
+					filters: 8,
+					strides: 1,
+					activation: "relu",
+					kernelInitializer: "varianceScaling"
+				})
+				, tf.layers.maxPooling2d({poolSize: [2, 2], strides: [2, 2]})
+				, tf.layers.conv2d({
+					kernelSize: 5,
+					filters: 16,
+					strides: 1,
+					activation: "relu",
+					kernelInitializer: "varianceScaling"
+				})
+				, tf.layers.maxPooling2d({poolSize: [2, 2], strides: [2, 2]})
+				, tf.layers.flatten()
+				, tf.layers.dense({ units: 10, activation: "softmax", kernelInitializer: "varianceScaling", })
+			]
+		});
 	nn.compile({
-		optimizer: "sgd"
-		, loss: "meanSquaredError"
+		optimizer: "adam"
+		, loss: "categoricalCrossentropy"
 		, metrics: ["accuracy"]
 	});
 	await nn.fitDataset(tfDataset, {
@@ -34,9 +52,9 @@ import { existsSync } from "fs";
 					console.log("Saved model for epoch ", ep)
 					const testData = getData("test");
 					const zz = nn.evaluate(
-						tf.tensor2d(testData.images)
+							tf.tensor2d(testData.images).reshape([testData.images.length, 28, 28, 1])
 						, tf.tensor2d(testData.labels.map(l => (Array.from({ length: 10 }, (_, i) => i === l ? 1 : 0))))
-					)
+					);
 					console.log(zz.toString());
 				} catch(err) {
 					console.error(err);
