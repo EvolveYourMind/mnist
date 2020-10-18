@@ -25,69 +25,58 @@ document.body.appendChild(canvas2)
 const ctx2 = canvas2.getContext("2d");
 const ctx = canvas.getContext("2d");
 let points = [];
-resetButton.addEventListener("click", () => points = [])
-guessButton.addEventListener("click", drawGuess);
-loadRandomButton.addEventListener("click", loadGuess	);
-function draw() {
+resetButton.addEventListener("click", () =>{
 	ctx.fillStyle = "#000"
 	ctx.fillRect(0, 0, canvas.width, canvas.height)
-	points.forEach(p => {
-		ctx.beginPath();
-		ctx.fillStyle = "#fff"
-		ctx.arc(p.x, p.y, pixelMultiplier / 2, 0, Math.PI * 2);
-		ctx.fill();
-		ctx.closePath();
-	});
-}
-setInterval(draw, 33);
+})
+guessButton.addEventListener("click", drawGuess);
+loadRandomButton.addEventListener("click", loadGuess	);
+ctx.fillStyle = "#000"
+ctx.fillRect(0, 0, canvas.width, canvas.height)
 let mousedown = false;
 canvas.addEventListener("mousedown", e => {
 	mousedown = true
+	ctx.fillStyle = "#fff"
+	ctx.strokeStyle = "#fff"
+	ctx.beginPath();
+	ctx.moveTo(e.offsetX, e.offsetY);
 })
 
-document.body.addEventListener("mouseup", e => mousedown = false)
+document.body.addEventListener("mouseup", e => {
+	mousedown = false
+	ctx.closePath();
+	ctx.stroke();
+})
 
 canvas.addEventListener("mousemove", e => {
 	if(mousedown) {
-		points.push({ x: e.offsetX, y: e.offsetY });
+		ctx.lineWidth = 40;
+		ctx.lineCap = "round"
+		ctx.lineJoin = "round"
+		ctx.lineTo(e.offsetX, e.offsetY)
+		ctx.stroke();
+		ctx.moveTo(e.offsetX, e.offsetY);
 	}
 });
 
 
 function drawGuess() {
-	const img = Array.from({ length: 28 }, () => Array.from({ length: 28 }, () => 0))
-	points.map(p => [Math.floor(p.x / pixelMultiplier), Math.floor(p.y / pixelMultiplier)]).forEach(([x, y]) => {
-		img[y][x] = 0.8;
-		[
-				[x - 1, y]
-			, [x + 1, y]
-			, [x, y + 1]
-			, [x, y - 1]
-			, [x + 1, y + 1]
-			, [x - 1, y + 1]
-			, [x + 1, y - 1]
-			, [x - 1, y - 1]
-		].filter((coords) => coords.every(p => 0 <= p && p < 28))
-			.forEach(([nx, ny]) => {
-				img[ny][nx] = Math.min(1, img[ny][nx] + 0.05)
-			})
-	})
-
+	const img = tf.image.resizeBilinear(tf.browser.fromPixels(canvas, 1, true), [28, 28]).toFloat().div(255);
+	const imgData = img.dataSync();
 	for(let x = 0; x < 28; x++) {
 		for(let y = 0; y < 28; y++) {
-			ctx2.fillStyle = `#${Array.from({ length: 3 }, _ => Math.floor(img[y][x] * 15).toString(16)).join("")}`
+			ctx2.fillStyle = `#${Array.from({ length: 3 }, _ => Math.floor(imgData[y * 28 + x] * 15).toString(16)).join("")}`
 			ctx2.fillRect(x * pixelMultiplier, y * pixelMultiplier, pixelMultiplier, pixelMultiplier);
 		}
 	}
 
-	const outputs = [...model.predict(tf.tensor1d(img.reduce((a, v) => a.concat(v))).expandDims()).dataSync()];
-	const g = outputs.map((p, num) => ({ p, num }));
-	g.sort((a, b) => b.p - a.p);
-	guessDiv.innerText = `Guesses: \n${g.slice(0, 3).map(({ p, num }) => `${num}: ${(p * 100).toFixed(2)}%`).join("\n")}`
+	const outputs = [...model.predict(img.flatten().expandDims()).dataSync()];
+	output(outputs);
 }
-
+let examples = null;
 async function loadGuess() {
-	const { images } = await fetch("./examples.json").then(r => r.json());
+	if(examples === null) examples = await fetch("./examples.json").then(r => r.json());
+	const { images } = examples;
 	const randomImg = images[Math.floor(Math.random() * images.length)];
 	for(let x = 0; x < 28; x++) {
 		for(let y = 0; y < 28; y++) {
@@ -96,6 +85,10 @@ async function loadGuess() {
 		}
 	}
 	const outputs = [...model.predict(tf.tensor1d(randomImg).expandDims()).dataSync()];
+	output(outputs)
+}
+
+function output(outputs) {
 	const g = outputs.map((p, num) => ({ p, num }));
 	g.sort((a, b) => b.p - a.p);
 	guessDiv.innerText = `Guesses: \n${g.slice(0, 3).map(({ p, num }) => `${num}: ${(p * 100).toFixed(2)}%`).join("\n")}`
