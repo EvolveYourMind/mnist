@@ -1,6 +1,5 @@
-import * as tf from "@tensorflow/tfjs-node";
-import { Tensor } from "@tensorflow/tfjs-node";
-import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
+import * as tf from "@tensorflow/tfjs-node-gpu";
+import { Tensor } from "@tensorflow/tfjs-node-gpu";
 
 const zip = <T, U>(xs: T[], ys: U[]): [T, U][] => xs.map((x, i) => [x, ys[i]]);
 type Activation = { act: (x: tf.Tensor) => tf.Tensor, der: (y: tf.Tensor) => tf.Tensor }
