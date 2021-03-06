@@ -95,5 +95,5 @@ function output(outputs) {
 
 let model
 (async () => {
-	model = await tf.loadLayersModel(location.href + "/../../model2/model.json");
+	model = await tf.loadLayersModel(location.href + "/../model.json");
 })();

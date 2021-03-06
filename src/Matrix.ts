@@ -1,7 +1,12 @@
-export const rand = () => Math.random() * 2 - 1;
 export const sum = (xs: number[]) => xs.reduce((a, v) => a + v);
-export const zip = <A, B>(a: A[], b: B[]) => a.map((x, i) => [x, b[i]]) as [A, B][];
-
+export const zip = <A, B>(a: A[], b: B[]): [A, B][] => a.slice(0, Math.min(a.length, b.length)).map((x, i) => [x, b[i]]);
+export const zipWith = <A, B, V>(a: A[], b: B[], f: (ab: [A, B]) => V): V[] => zip(a, b).map(f);
+export const dot = (a: number[], b: number[]): number => sum(zip(a, b).map(([x, y]) => x * y));
+export const sub = (a: number[], b: number[]) => zipWith(a, b, ([x, y]) => x - y);
+export const add = (a: number[], b: number[]) => zipWith(a, b, ([x, y]) => x + y);
+export const mul = (a: number[], b: number) => a.map(x => x * b)
+export const hmul = (a: number[], b: number[]) => zipWith(a, b, ([x, y]) => x * y);
+export const avg = (a: number[]) => sum(a) / a.length
 export class Matrix {
 	data: number[][];
 	rows: number;
@@ -10,6 +15,9 @@ export class Matrix {
 		this.data = Array.from({ length: rows }, _ => Array.from({ length: cols }));
 		this.rows = rows;
 		this.cols = cols;
+	}
+	static random(shape: [number, number]) {
+		return new Matrix(shape[0], shape[1]).map(_ => (Math.random() - 1) * 2);
 	}
 	shape() {
 		return [this.rows, this.cols];
@@ -35,6 +43,9 @@ export class Matrix {
 		res.data = this.data.map((xs, i) => xs.map((x, j) => f(x, i, j)))
 		return res;
 	}
+	mapRows<T>(f: (xs: number[]) => T): T[] {
+		return this.data.map(f);
+	}
 	reduce<T>(f: (acc: T, row: number[], i: number) => T, initialValue: T) {
 		return this.data.reduce(f, initialValue);
 	}
@@ -55,6 +66,9 @@ export class Matrix {
 	}
 	sub(other: Matrix) {
 		return this.zipWith(other, (x, y) => x - y);
+	}
+	dot(other: Matrix) {
+		return this.hamMul(other).sum();
 	}
 	hamMul(other: Matrix) {
 		return this.zipWith(other, (x, y) => x * y);
@@ -81,5 +95,11 @@ export class Matrix {
 	}
 	eq(m: Matrix) {
 		return this.data.every((row, i) => row.every((v, j) => v === m.data[i][j]))
+	}
+	static vmv(x: number[], ws: Matrix): number[] {
+		return ws.data.map(w => dot(x, w));
+	}
+	static avg(ms: Matrix[]): Matrix {
+		return ms.reduce((acc, v) => acc.add(v)).map(v => v / ms.length);
 	}
 }
