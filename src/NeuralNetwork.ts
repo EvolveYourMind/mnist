@@ -10,21 +10,19 @@ export class NeuralNetwork {
 		this.weights = zip(shape, shape.slice(1)).map(Matrix.random);
 		this.biases = shape.slice(1).map(x => Array.from({ length: x }, _ => 2 * (Math.random() - 1)))
 	}
-	forward(x: number[], d: number[], layer = 0): { errSignal: number[], deltaW: Matrix, deltaB: number[], y: number[] }[] {
+	forward(x: number[], d: number[], layer = 0): { errSignal: number[], deltaW: Matrix, y: number[] }[] {
 		const ws = this.weights[layer];
 		const y = add(Matrix.vmv(x, ws.T()), this.biases[layer]).map(phi);
 		const dy = y.map(dphi);
 		if(layer === this.weights.length - 1) {
 			const errSignal = hmul(sub(d, y), dy);
 			const deltaW = ws.map((_, i, j) => errSignal[j] * x[i]);
-			const deltaB = errSignal.map(er => er);
-			return [{ errSignal, deltaW, deltaB, y }];
+			return [{ errSignal, deltaW, y }];
 		} else {
 			const next = this.forward(y, d, layer + 1);
 			const errSignal = dy.map((dyj, j) => dyj * sum(next[0].errSignal.map((dk, k) => dk * this.weights[layer + 1].data[j][k])))
 			const deltaW = ws.map((_, i, j) => errSignal[j] * x[i]);
-			const deltaB = errSignal.map(er => er);
-			return [{ errSignal, deltaW, deltaB, y: next[0].y }, ...next];
+			return [{ errSignal, deltaW, y: next[0].y }, ...next];
 		}
 	}
 	train(xs: number[][], ys: number[][], lr: number): number[][] {
@@ -32,7 +30,7 @@ export class NeuralNetwork {
 		for(let l = 0; l < this.weights.length; l++) {
 			const layerDeltas = forwards.map(delta => delta[l]);
 			this.weights[l] = this.weights[l].add(Matrix.avg(layerDeltas.map(d => d.deltaW)).map(v => v * lr));
-			this.biases[l] = add(this.biases[l], layerDeltas.map(d => d.deltaB).reduce((acc, v) => add(acc, v)).map(v => v / xs.length * lr));
+			this.biases[l] = add(this.biases[l], layerDeltas.map(d => d.errSignal).reduce((acc, v) => add(acc, v)).map(v => v / xs.length * lr));
 		}
 		return forwards.map(f => f[0].y);
 	}
