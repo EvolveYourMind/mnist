@@ -9,5 +9,5 @@ nn.fit(
 	data.images
 	, data.labels.map(l => Array.from({ length: 10 }, (_, i) => i === l ? 1 : 0))
 	, 1000
-	, 500
+	, 0.1
 	, 256);
